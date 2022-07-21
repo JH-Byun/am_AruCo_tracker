@@ -1,5 +1,5 @@
 <launch>
-    <node name = "mono_surface" pkg = "mono_surface_pub" type = "mono_surface" output = "screen">
+    <node name = "mono_surface" pkg = "am_ArUco_tracker" type = "mono_surface" output = "screen">
         <!-- create aruco marker  -->
         <rosparam param="create_marker">false</rosparam>
         <!-- distortion coefficients  -->
