@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.5.1)
-project(am_AruCo_tracker)
+project(am_aruco_tracker)
 set(CMAKE_BUILD_TYPE Debug) # Release, RelWithDebInfo
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14 -pthread -pg -O2") #O0,O2: optimize 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}) 
@@ -41,10 +41,6 @@ include_directories( ${includeDirs} )
 include_directories( ${catkin_INCLUDE_DIRS} )
 include_directories( ${Eigen_INCLUDE_DIRS} )
 
-add_executable(mono_surface
-  src/mono_surface.cpp)
-target_link_libraries(mono_surface ${catkin_LIBRARIES} ${OpenCV_LIBRARIES} ${Eigen_LIBRARIES})
-
-add_executable(mv_camera_calib
-  src/mv_camera_calib.cpp)
-target_link_libraries(mv_camera_calib ${catkin_LIBRARIES} ${OpenCV_LIBRARIES})
+add_executable(aruco_pose_pub
+  src/aruco_pose_pub.cpp)
+target_link_libraries(aruco_pose_pub ${catkin_LIBRARIES} ${OpenCV_LIBRARIES} ${Eigen_LIBRARIES})
