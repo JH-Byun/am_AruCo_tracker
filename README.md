@@ -1,22 +1,22 @@
 # am_AruCo_tracker
-- Ubuntu version: 18.04 
-- ROS version: melodic
-- c version: c17
-- c++ version: c++14
+It is a ROS package for the estimation of an AruCo marker's pose by a mvBlueFox-MLC2 series (monocular camera) attached to an aerial manipulator.
+
+## Version information
+- Ubuntu: 18.04 
+- ROS: melodic
+- c: c17
+- c++: c++14
+- PX4 firmware
 
 ## Devices
-### PixHawk4
-Firmware version: 1.11.03
-
-### mvBlueFox
-<br> Monocular camera </br>
-<br> USB 2.0 </br>
-<br> Encoder: BGRA, 8bit </br>
+- Flight controller (FC): PixHawk4
+- Camera: mvBlueFox-MLC2 series
+    - USB 2.0
+    - BGRA, 8bit
 
 ## ROS parameters
-
-<br> /publish_rate </br>
-<br> /image_conversion_version </br>
+- ==/publish_rate==:  
+- ==/image_conversion_version==
 
 
 ### AruCo marker storage
