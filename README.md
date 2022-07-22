@@ -15,31 +15,14 @@ It is a ROS package for the estimation of an AruCo marker's pose by a mvBlueFox-
     - BGRA, 8bit
 
 ## ROS parameters
-- ==/publish_rate==:  
-- ==/image_conversion_version==
-
-
-### AruCo marker storage
-<br> /create_marker </br>
-<br> /store_directory </br>
-
-### Camera parameters
-<br> /fx </br>
-<br> /fy </br>
-<br> /cx </br>
-<br> /cy </br>
-<br> /k_ </br>
-<br> /p_ </br>
-
-### Visualization
-<br> /vis_flag </br>
+- `/publish_rate`
+- `/create_marker`
+- `/marker_type`
+- `/store_directory`
+- `/image_conversion_version`
+- `/fx`, `/fy`, `/cx`, `/cy`
 
 ## ROS topics
 ### Subscribing topics
-<br> /0/image_raw </br>
-<br> /body_to_camera </br>
-<br> /mavros/local_position/odom </br>
-<br> /mavros/imu/data </br>
 
 ### Publishing topics
-<br> /aruco_marker/pose </br>
