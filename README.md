@@ -1,3 +1,9 @@
+# am_AruCo_tracker
+- Ubuntu version: 18.04 
+- ROS version: melodic
+- c version: c17
+- c++ version: c++14
+
 ## Devices
 ### PixHawk4
 Firmware version: 1.11.03
