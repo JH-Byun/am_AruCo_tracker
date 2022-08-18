@@ -54,6 +54,7 @@ Eigen::Matrix<double, 3, 3> R_bc; // SO3 martrix of the camera w.r.t. multicopte
 /*
 parameter variables
 */
+int nav_mode; // navigation mode
 int rate_; // set publish rate
 std::string dir_; // set directory of the marker storage
 bool create_marker; // whether to create marker image file or not
@@ -101,34 +102,57 @@ void bluefox_image_cb(const sensor_msgs::Image::ConstPtr &msg)
 // cb for subscribing multicopter's imu data
 void imu_cb(const sensor_msgs::Imu::ConstPtr &msg)
 {
-    Eigen::Quaternion<double> q_b;
-    q_b.w() = msg->orientation.w;
-    q_b.x() = msg->orientation.x;
-    q_b.y() = msg->orientation.y;
-    q_b.z() = msg->orientation.z;
+    if (nav_mode == 1) {
+        Eigen::Quaternion<double> q_b;
+        q_b.w() = msg->orientation.w;
+        q_b.x() = msg->orientation.x;
+        q_b.y() = msg->orientation.y;
+        q_b.z() = msg->orientation.z;
 
-    Eigen::Matrix<double, 3, 3> R_b = q_b.toRotationMatrix();
-    Eigen::Matrix<double, 3, 1> euler_rp = so3::R2rpy(R_b); // only roll and pitch values are valid
-    phi_b(0) = euler_rp(0); // roll angle
-    phi_b(1) = euler_rp(1); // pitch angle
+        Eigen::Matrix<double, 3, 3> R_b = q_b.toRotationMatrix();
+        Eigen::Matrix<double, 3, 1> euler_rp = so3::R2rpy(R_b); // only roll and pitch values are valid
+        phi_b(0) = euler_rp(0); // roll angle
+        phi_b(1) = euler_rp(1); // pitch angle
+    }
 }
 // cb for subscribing multicopter's navigation data (position & yaw angle)
+void vision_pose_cb(const nav_msgs::Odometry::ConstPtr &msg) 
+{
+    if (nav_mode == 1) {
+        // position
+        p_b(0) = msg->pose.pose.position.x;
+        p_b(1) = msg->pose.pose.position.y;
+        p_b(2) = msg->pose.pose.position.z;
+
+        // yaw angle
+        Eigen::Quaternion<double> q_b;
+        q_b.w() = msg->pose.pose.orientation.w;
+        q_b.x() = msg->pose.pose.orientation.x;
+        q_b.y() = msg->pose.pose.orientation.y;
+        q_b.z() = msg->pose.pose.orientation.z;
+        Eigen::Matrix<double, 3, 3> R_b = q_b.toRotationMatrix();
+        Eigen::Matrix<double, 3, 1> euler_y = so3::R2rpy(R_b); // get only yaw value
+        phi_b(2) = euler_y(2); // yaw angle
+    }
+}
 void nav_pos_cb(const nav_msgs::Odometry::ConstPtr &msg)
 {
-    // position
-    p_b(0) = msg->pose.pose.position.x;
-    p_b(1) = msg->pose.pose.position.y;
-    p_b(2) = msg->pose.pose.position.z;
+    if (nav_mode == 2) {
+        // position
+        p_b(0) = msg->pose.pose.position.x;
+        p_b(1) = msg->pose.pose.position.y;
+        p_b(2) = msg->pose.pose.position.z;
 
-    // yaw angle
-    Eigen::Quaternion<double> q_b;
-    q_b.w() = msg->pose.pose.orientation.w;
-    q_b.x() = msg->pose.pose.orientation.x;
-    q_b.y() = msg->pose.pose.orientation.y;
-    q_b.z() = msg->pose.pose.orientation.z;
-    Eigen::Matrix<double, 3, 3> R_b = q_b.toRotationMatrix();
-    Eigen::Matrix<double, 3, 1> euler_y = so3::R2rpy(R_b); // get only yaw value
-    phi_b(2) = euler_y(2); // yaw angle
+        // yaw angle
+        Eigen::Quaternion<double> q_b;
+        q_b.w() = msg->pose.pose.orientation.w;
+        q_b.x() = msg->pose.pose.orientation.x;
+        q_b.y() = msg->pose.pose.orientation.y;
+        q_b.z() = msg->pose.pose.orientation.z;
+        Eigen::Matrix<double, 3, 3> R_b = q_b.toRotationMatrix();
+        Eigen::Matrix<double, 3, 1> euler_y = so3::R2rpy(R_b); // get only yaw value
+        phi_b(2) = euler_y(2); // yaw angle
+    }
 }
 // cb for subscribing camera's pose w.r.t. multicopter
 void camera_pose_cb(const geometry_msgs::PoseStamped::ConstPtr &msg)
@@ -154,15 +178,20 @@ int main(int argc, char **argv)
     ros::NodeHandle nh;
 
     ros::Subscriber bluefox_image_sub = nh.subscribe("/0/image_raw", 1, bluefox_image_cb);
+    ros::Subscriber vision_pose_sub = nh.subscribe("/mavros/vision_pose/odom", 1, vision_pose_cb);
     ros::Subscriber imu_sub = nh.subscribe("/mavros/imu/data", 1, imu_cb);
     ros::Subscriber nav_pos_sub = nh.subscribe("/mavros/local_position/odom", 1, nav_pos_cb);
     ros::Subscriber camera_pose_sub = nh.subscribe("/body_to_camera", 1, camera_pose_cb);
     
+    ros::Publisher rel_pose_pub = nh.advertise<geometry_msgs::PoseStamped>("/aruco_marker/rel_pose", 1);
     ros::Publisher marker_pose_pub = nh.advertise<geometry_msgs::PoseStamped>("/aruco_marker/pose", 1);
     
     /*
      get parameters
      */
+    // navigation mode
+    if (!nh.getParam((ros::this_node::getName() + "/nav_mode").c_str(), nav_mode))
+        nav_mode = 1;
     // set publish rate
     if (!nh.getParam((ros::this_node::getName() + "/publish_rate").c_str(), rate_))
         rate_ = 10;
@@ -378,7 +407,8 @@ int main(int argc, char **argv)
         
         // calculate rotation matrix from {M} to {I}
         Eigen::Matrix<double, 3, 3> R_b = so3::rpy2R(phi_b(0), phi_b(1), phi_b(2));
-        Eigen::Matrix<double, 3, 3> R_m = R_b * R_bc * R_cm * so3::rpy2R(0.0,PI/2,PI);
+        Eigen::Matrix<double, 3, 3> R_m = R_b * R_bc * R_cm * so3::rpy2R(0.0,PI/2,PI/2);
+        // Eigen::Matrix<double, 3, 3> R_m = R_b * R_bc * R_cm;
 
         // result visualizaition
         if (vis_flag) {
@@ -386,6 +416,21 @@ int main(int argc, char **argv)
             cv::waitKey(0);
         }
         
+        // publish raw pose topic
+        geometry_msgs::PoseStamped rel_pose;
+        rel_pose.header.frame_id = "map";
+        rel_pose.header.seq = seq_;
+        rel_pose.header.stamp = ros::Time::now();
+        rel_pose.pose.position.x = tvecs[0].val[0];
+        rel_pose.pose.position.y = tvecs[0].val[1];
+        rel_pose.pose.position.z = tvecs[0].val[2];
+        Eigen::Quaternion<double> q_cm = so3::R2q(R_cm); // conversion from rotation matrix to quaternion
+        rel_pose.pose.orientation.w = q_cm.w();
+        rel_pose.pose.orientation.x = q_cm.x();
+        rel_pose.pose.orientation.y = q_cm.y();
+        rel_pose.pose.orientation.z = q_cm.z();
+        rel_pose_pub.publish(rel_pose);
+
         // publish marker pose topic
         geometry_msgs::PoseStamped marker_pose;
         marker_pose.header.frame_id = "map";
@@ -393,7 +438,7 @@ int main(int argc, char **argv)
         marker_pose.header.stamp = ros::Time::now();
         Eigen::Matrix<double, 3, 1> p_cm;
         p_cm << tvecs[0].val[0], tvecs[0].val[1], tvecs[0].val[2];
-        Eigen::Matrix<double, 3, 1> p_m = p_b + R_b * (p_bc + R_cm * p_cm);
+        Eigen::Matrix<double, 3, 1> p_m = p_b + R_b * (p_bc - R_cm * p_cm);
         marker_pose.pose.position.x = p_m(0);
         marker_pose.pose.position.y = p_m(1);
         marker_pose.pose.position.z = p_m(2);

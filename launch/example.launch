@@ -1,7 +1,10 @@
 <launch>
     <node name = "aruco_pose_pub" pkg = "am_aruco_tracker" type = "aruco_pose_pub" output = "screen">
+        <!-- navigation mode -->
+        <!-- 1: optitrack + imu, 2: local_pos_odom -->
+        <rosparam param="nav_mode">1</rosparam>
         <!-- publish rate -->
-        <rosparam param="publish_rate">10</rosparam>
+        <rosparam param="publish_rate">100</rosparam>
         <!-- create aruco marker  -->
         <rosparam param="create_marker">false</rosparam>
         <!-- type of the aruco marker  -->
@@ -25,7 +28,7 @@
         <rosparam param="k_">[-0.3794, 0.1686, 0.0, -0.3794, 0.1686, 0.0]</rosparam>
         <rosparam param="p_">[0.0, 0.0]</rosparam>
         <!-- length of the marker side -->
-        <rosparam param="side_length">0.05</rosparam>
+        <rosparam param="side_length">0.16</rosparam>
         <!-- visualize the marker detection result or not -->
         <rosparam param="vis_flag">false</rosparam>
     </node>
